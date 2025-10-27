@@ -262,6 +262,54 @@
             transition: width 0.6s ease;
         }
         
+        /* Completion State Styles */
+        .completion-state {
+            text-align: center;
+            padding: 1rem;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-radius: 8px;
+            border: 1px solid #c3e6cb;
+            margin-bottom: 1rem;
+            animation: completionSlideIn 0.5s ease-out;
+        }
+        
+        .completion-message {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #155724;
+            margin-bottom: 0.5rem;
+        }
+        
+        .completion-stats {
+            color: #6c757d;
+        }
+        
+        @keyframes completionSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes completionFadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+        
+        .completion-state.fade-out {
+            animation: completionFadeOut 0.5s ease-in forwards;
+        }
+        
         .progress-info {
             background: white;
             padding: 0.5rem 0.75rem;
@@ -602,6 +650,20 @@
                          aria-valuemin="0" 
                          aria-valuemax="100">
                         <span class="progress-text">Ready to start...</span>
+                    </div>
+                </div>
+                
+                <!-- Completion State (hidden by default) -->
+                <div id="completion-state" class="completion-state" style="display: none;">
+                    <div class="completion-message">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span class="completion-text">Scraping Completed Successfully!</span>
+                    </div>
+                    <div class="completion-stats">
+                        <small class="text-muted">
+                            <span id="completion-email-count">0</span> emails found • 
+                            <span id="completion-time">0</span> seconds
+                        </small>
                     </div>
                 </div>
                 <div class="row">
@@ -1393,7 +1455,15 @@
             showProgressBar() {
                 console.log('showProgressBar called');
                 const progressContainer = document.getElementById('progress-container');
+                const completionState = document.getElementById('completion-state');
                 console.log('Progress container found:', progressContainer);
+                
+                // Hide completion state when starting new scraping
+                if (completionState) {
+                    completionState.style.display = 'none';
+                    completionState.classList.remove('fade-out');
+                }
+                
                 if (progressContainer) {
                     progressContainer.style.display = 'block';
                     console.log('Progress bar shown');
@@ -1407,8 +1477,41 @@
             hideProgressBar() {
                 const progressContainer = document.getElementById('progress-container');
                 if (progressContainer) {
-                    progressContainer.style.display = 'none';
-                    this.stopProgressTimer();
+                    // Show completion state first
+                    this.showCompletionState();
+                    
+                    // Hide progress bar after showing completion
+                    setTimeout(() => {
+                        progressContainer.style.display = 'none';
+                        this.stopProgressTimer();
+                    }, 3000); // Show completion for 3 seconds
+                }
+            }
+            
+            showCompletionState() {
+                const completionState = document.getElementById('completion-state');
+                const completionEmailCount = document.getElementById('completion-email-count');
+                const completionTime = document.getElementById('completion-time');
+                
+                if (completionState && completionEmailCount && completionTime) {
+                    // Update completion stats
+                    completionEmailCount.textContent = this.results.length;
+                    
+                    // Calculate elapsed time
+                    if (this.scrapingStartTime) {
+                        const elapsed = Math.round((new Date() - this.scrapingStartTime) / 1000);
+                        completionTime.textContent = elapsed;
+                    } else {
+                        completionTime.textContent = '0';
+                    }
+                    
+                    // Show completion state
+                    completionState.style.display = 'block';
+                    
+                    // Add fade-out class after 2.5 seconds
+                    setTimeout(() => {
+                        completionState.classList.add('fade-out');
+                    }, 2500);
                 }
             }
             
